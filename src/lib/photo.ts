@@ -72,17 +72,18 @@ export function fitLong(w: number, h: number, max = MAX_LONG): { w: number; h: n
 /** The largest picture handed to the QR reader, long side (an attempt larger than this is scaled to fit). */
 export const QR_MAX = 2000;
 
-export interface QrAttempt { region: Rect; w: number; h: number }
+export interface QrAttempt { region: Rect; w: number; h: number; /** Box-blur radius after scaling (0: none). */ blur: number }
 
 /**
  * Where to look for the sheet's QR code and at what size, best first: the top-left corner where every sheet prints it, as
- * captured and then enlarged 2× (a phone's live camera often gives only ~1900 px across, which leaves the printed code at ~2 px
- * per module: too few for the reader until it is enlarged), then the whole photo.
+ * taken, then enlarged 2× (a small code has too few pixels per square for the reader until it is enlarged), then enlarged and
+ * lightly blurred (removes fine stripes such as a screen's moiré), then the whole photo. Tuned on real test photos read at the
+ * kept photo's size (long side MAX_LONG).
  */
 export function qrAttempts(w: number, h: number): QrAttempt[] {
   const corner = { x: 0, y: 0, w: Math.round(w * 0.35), h: Math.round(h * 0.4) };
-  const at = (region: Rect, scale: number): QrAttempt => ({ region, ...fitLong(region.w * scale, region.h * scale, QR_MAX) });
-  const tries = [at(corner, 1), at(corner, 2), at({ x: 0, y: 0, w, h }, 1)];
-  // A corner already at the size limit gains nothing from the 2× try.
+  const at = (region: Rect, scale: number, blur = 0): QrAttempt => ({ region, ...fitLong(region.w * scale, region.h * scale, QR_MAX), blur });
+  const tries = [at(corner, 1), at(corner, 2), at(corner, 2, 2), at({ x: 0, y: 0, w, h }, 1)];
+  // A corner already at the size limit gains nothing from the plain 2× try (the blurred one still may).
   return tries.filter((t, i) => i !== 1 || t.w > tries[0].w);
 }

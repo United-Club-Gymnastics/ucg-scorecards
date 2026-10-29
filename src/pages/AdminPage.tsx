@@ -78,7 +78,9 @@ function Admin({ email }: { email: string }) {
   const [meetPick, setMeetPick] = useState('');
   const [data, setData] = useState<Result<{ lists: SheetList[]; gymOrder: string[] }> | null>(null);
   const [namePick, setName] = useState('');
-  const [sessionPick, setSessionId] = useState('');
+  // The gym is kept by name, so changing session stays on the same gym when the new session has it (and likewise apparatus,
+  // squad and page: each choice is kept while it is still one of the options).
+  const [gymPick, setGym] = useState('');
   const [eventPick, setEvent] = useState('');
   const [squadPick, setSquad] = useState('');
   const [page, setPage] = useState(1);
@@ -107,8 +109,8 @@ function Admin({ email }: { email: string }) {
   const names = useMemo(() => sessionNames(lists), [lists]);
   const name = pickOr(namePick, names);
   const gyms = useMemo(() => gymsFor(lists, name, ready?.gymOrder ?? []), [lists, name, ready]);
-  const sessionId = pickOr(sessionPick, gyms.map((g) => g.sessionId));
-  const list = gyms.find((l) => l.sessionId === sessionId);
+  const gym = pickOr(gymPick, gyms.map((g) => g.location));
+  const list = gyms.find((l) => l.location === gym);
   const events = list ? eventsOf(list) : [];
   const event = pickOr(eventPick, events);
   const squads = list && event ? squadsOf(list, event) : [];
@@ -128,6 +130,13 @@ function Admin({ email }: { email: string }) {
 
   const photoSet = photos?.for === photosFor ? photos : null;
   const cover = list && photoSet?.ok ? coverage(list, photoSet.value) : null;
+  // Changing one choice keeps the ones after it as they are shown now (even a default nobody picked), so they stay put when the
+  // new session or gym has them too.
+  const keepBelow = (from: 'session' | 'gym' | 'event') => {
+    if (from === 'session') setGym(gym);
+    if (from !== 'event') setEvent(event);
+    setSquad(squad);
+  };
   const choose = (e: SheetEntry) => { setEvent(e.event); setSquad(e.squad); setPage(e.page); };
 
   return (
@@ -148,15 +157,15 @@ function Admin({ email }: { email: string }) {
           </label>
           <label className="adm-field">
             <span>Session</span>
-            <Select aria-label="Session" value={name} onChange={setName} disabled={names.length === 0} placeholder="—" options={names.map((n) => ({ value: n, label: n }))} />
+            <Select aria-label="Session" value={name} onChange={(v) => { keepBelow('session'); setName(v); }} disabled={names.length === 0} placeholder="—" options={names.map((n) => ({ value: n, label: n }))} />
           </label>
           <label className="adm-field">
             <span>Gym</span>
-            <Select aria-label="Gym" value={sessionId} onChange={setSessionId} disabled={gyms.length === 0} placeholder="—" options={gyms.map((g) => ({ value: g.sessionId, label: g.location || '(no gym)' }))} />
+            <Select aria-label="Gym" value={gym} onChange={(v) => { keepBelow('gym'); setGym(v); }} disabled={gyms.length === 0} placeholder="—" options={gyms.map((g) => ({ value: g.location, label: g.location || '(no gym)' }))} />
           </label>
           <label className="adm-field">
             <span>Apparatus</span>
-            <Select aria-label="Apparatus" value={event} onChange={(v) => { setEvent(v); setPage(1); }} disabled={!list} placeholder="—" options={list ? events.map((e) => ({ value: e, label: eventName(list.discipline, e) })) : []} />
+            <Select aria-label="Apparatus" value={event} onChange={(v) => { keepBelow('event'); setEvent(v); setPage(1); }} disabled={!list} placeholder="—" options={list ? events.map((e) => ({ value: e, label: eventName(list.discipline, e) })) : []} />
           </label>
           <label className="adm-field">
             <span>{event === 'SY' ? 'Flight' : 'Squad'}</span>

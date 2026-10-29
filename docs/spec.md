@@ -29,7 +29,7 @@ A session's list exists once someone has opened Exports in Lineups after its squ
   camera's full resolution, scaled to at most 2400 px on the long side, JPEG 85%.
 - No camera access (blocked, old browser): "Use the camera app" (the phone's own camera); a photo taller than wide is refused,
   except for the synchro sheet.
-- Review: Retake / Use photo. The QR in the photo is read (jsQR: the top-left corner, then that corner enlarged 2×, then the whole photo): ✓ matches, a warning naming the other
+- Review: Retake / Use photo. The QR in the photo is read (jsQR, on the kept photo: the top-left corner, then enlarged 2×, then enlarged and lightly blurred to remove moiré, then the whole photo): ✓ matches, a warning naming the other
   sheet, or "couldn't read the code" — never a block.
 - Upload: progress; on a weak signal "Weak signal — still trying…", the photo is kept in the page, retries back off
   2 s → 30 s forever while the page is open and go at once when the phone is back online; leaving mid-upload asks first.
@@ -50,7 +50,8 @@ Floor - Squad A.jpg"` so the admin's Download link saves it under that name.
 
 ## 7. Admin view
 Sign in with Google. Meet (newest first, remembered per browser) → Session (natural order) → Gym (the meet's gym order) →
-Apparatus (print order) → Squad / Flight → Page (only when more than one). Shows the newest photo: Fit / 1.5× / 2× / 3× zoom
+Apparatus (print order) → Squad / Flight → Page (only when more than one). Changing a choice keeps the ones after it when the
+new session or gym has them (e.g. the same gym in the next session). Shows the newest photo: Fit / 1.5× / 2× / 3× zoom
 (click toggles), Download, Delete…, and every version. Below: "N of M sheets have a photo" and a **No photo yet** list that
 opens a sheet when chosen, with a **Has a photo** list above it. Over the photo the scroll wheel zooms (1×–5×, about the
 pointer) and dragging with the left or middle button pans; a click without a drag toggles Fit / 2×.

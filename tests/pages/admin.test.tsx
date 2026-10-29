@@ -122,6 +122,21 @@ describe('admin view', () => {
     expect(within(have).getByRole('button')).toHaveAttribute('aria-current', 'true');
   });
 
+  it('keeps the gym, apparatus and squad when the session changes, if the new session has them', async () => {
+    const user = userEvent.setup();
+    store.loadSheetLists.mockResolvedValue([...LISTS,
+      { sessionId: 's2-orange', name: 'Session 2', location: 'Orange', discipline: 'MAG', sheets: sheets([['PH', 'A', 1, 1], ['FX', 'B', 1, 1]]) }]);
+    open();
+    await screen.findByRole('heading', { name: 'Session 1 – Green · Floor · Squad A' });
+    await choose(user, screen.getByLabelText('Gym'), 'Orange');
+    await choose(user, screen.getByLabelText('Squad'), 'Squad B');
+    await choose(user, screen.getByLabelText('Session'), 'Session 2');
+    expect(await screen.findByRole('heading', { name: 'Session 2 – Orange · Floor · Squad B' })).toBeInTheDocument();
+    // Back to Session 1 still on Orange; a gym the session does not have falls back to its first.
+    await choose(user, screen.getByLabelText('Session'), 'Session 1');
+    expect(await screen.findByRole('heading', { name: 'Session 1 – Orange · Floor · Squad B' })).toBeInTheDocument();
+  });
+
   it('deletes a version only after confirming', async () => {
     const user = userEvent.setup();
     open();

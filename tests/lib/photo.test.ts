@@ -85,18 +85,24 @@ describe('photo geometry', () => {
     expect(fitLong(3000, 4000, 1600)).toEqual({ w: 1200, h: 1600 });
   });
 
-  it('looks for the QR in the top-left corner, then the corner enlarged 2×, then everywhere', () => {
-    const corner = { x: 0, y: 0, w: 532, h: 474 };
-    expect(qrAttempts(1520, 1185)).toEqual([
-      { region: corner, w: 532, h: 474 },
-      { region: corner, w: 1064, h: 948 },
-      { region: { x: 0, y: 0, w: 1520, h: 1185 }, w: 1520, h: 1185 },
+  it('looks for the QR in the top-left corner, enlarged 2×, enlarged and blurred, then everywhere', () => {
+    const corner = { x: 0, y: 0, w: 649, h: 960 };
+    expect(qrAttempts(1855, 2400)).toEqual([
+      { region: corner, w: 649, h: 960, blur: 0 },
+      { region: corner, w: 1298, h: 1920, blur: 0 },
+      { region: corner, w: 1298, h: 1920, blur: 2 },
+      { region: { x: 0, y: 0, w: 1855, h: 2400 }, w: 1546, h: 2000, blur: 0 },
     ]);
   });
 
-  it('caps each try at the reader size limit, and skips the 2× try when it would not be bigger', () => {
-    const big = qrAttempts(4000, 3000);
-    expect(big.map((t) => [t.w, t.h])).toEqual([[1400, 1200], [2000, 1714], [2000, 1500]]);
-    expect(qrAttempts(12000, 9000).map((t) => [t.w, t.h])).toEqual([[2000, 1714], [2000, 1500]]);
+  it('caps each try at the reader size limit, and skips the plain 2× try when it would not be bigger', () => {
+    expect(qrAttempts(4000, 3000).map((t) => [t.w, t.h, t.blur])).toEqual([[1400, 1200, 0], [2000, 1714, 0], [2000, 1714, 2], [2000, 1500, 0]]);
+    expect(qrAttempts(12000, 9000).map((t) => [t.w, t.h, t.blur])).toEqual([[2000, 1714, 0], [2000, 1714, 2], [2000, 1500, 0]]);
+  });
+
+  it('scales the long side down to the limit, never up', () => {
+    expect(fitLong(4000, 3000)).toEqual({ w: 2400, h: 1800 });
+    expect(fitLong(1200, 900)).toEqual({ w: 1200, h: 900 });
+    expect(fitLong(3000, 4000, 1600)).toEqual({ w: 1200, h: 1600 });
   });
 });
