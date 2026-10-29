@@ -21,6 +21,8 @@
 .adm-meet { grid-column: 1 / -1; max-width: 420px; }
 .adm-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .adm-field > span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.adm-meet-photos { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.adm-card .adm-sub { font-size: 15px; margin: 0 0 8px; font-family: inherit; }
 .adm-export { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .adm-export-run { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .adm-export-run p { margin: 0; font-size: 14px; flex: 1 1 220px; }
@@ -31,7 +33,10 @@
 .adm-zoom .btn[aria-pressed='true'] { background: var(--navy-800); color: var(--white); border-color: var(--navy-800); }
 .adm-photo-box { overflow: auto; max-height: 80vh; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--ice-100); }
 .adm-photo-box:focus-visible { outline: 2px solid var(--navy-800); outline-offset: 2px; }
-.adm-photo-box img { display: block; max-width: none; height: auto; cursor: zoom-in; }
+.adm-photo-box { cursor: zoom-in; touch-action: pan-x pan-y; }
+.adm-photo-box.zoomed { cursor: grab; }
+.adm-photo-box.dragging { cursor: grabbing; user-select: none; }
+.adm-photo-box img { display: block; max-width: none; height: auto; pointer-events: none; }
 .adm-photo-box p { margin: 12px; }
 .adm-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
 .adm-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }

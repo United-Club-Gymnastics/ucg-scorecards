@@ -79,6 +79,12 @@ export async function sheetsWithPhotos(meetId: string, sessionId: string, keys: 
   return found;
 }
 
+/** Admins: the session ids under the meet's photo folder (one listing: Storage folders exist only while they hold a photo). */
+export async function sessionsHoldingPhotos(meetId: string): Promise<Set<string>> {
+  const res = await list(ref(storage, `scorecards/${encodeURIComponent(meetId)}`), { maxResults: 1000 });
+  return new Set(res.prefixes.map((p) => decodeURIComponent(p.name)));
+}
+
 export const photoUrl = (path: string): Promise<string> => getDownloadURL(ref(storage, path));
 /** Admins: one photo's bytes (for the download-all zip). */
 export const getPhoto = (path: string): Promise<Blob> => getBlob(ref(storage, path));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coverage, eventsOf, gymsFor, pagesOf, sessionNames, squadsOf } from '../../src/lib/pick';
+import { coverage, eventsOf, gymsFor, pagesOf, sessionNames, sessionsWithPhotos, squadsOf } from '../../src/lib/pick';
 import type { SheetList } from '../../src/lib/sheet';
 
 const s = (sessionId: string, name: string, location: string, sheets: [string, string, number, number][]): SheetList => ({
@@ -33,5 +33,13 @@ describe('admin picks', () => {
     const c = coverage(lists[1], new Set(['TR/A/1', 'SY/Flight%201/1']));
     expect(c).toMatchObject({ total: 5, done: 2 });
     expect(c.missing.map((e) => `${e.event}${e.squad}${e.page}`)).toEqual(['TRA2', 'TRC1', 'DMB1']);
+    expect(c.have.map((e) => `${e.event}${e.squad}${e.page}`)).toEqual(['TRA1', 'SYFlight 11']);
+  });
+
+  it('lists the sessions that have photos, in picker order', () => {
+    const all = new Set(lists.map((l) => l.sessionId));
+    expect(sessionsWithPhotos(lists, all, ['Orange']).map((l) => l.sessionId)).toEqual(['s2-orange', 's2-dupont', 's2-green', 's10-green']);
+    expect(sessionsWithPhotos(lists, new Set([lists[1].sessionId])).map((l) => l.sessionId)).toEqual([lists[1].sessionId]);
+    expect(sessionsWithPhotos(lists, new Set())).toEqual([]);
   });
 });

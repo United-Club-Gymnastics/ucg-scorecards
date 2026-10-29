@@ -4,9 +4,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import Select from '../components/Select';
 import { isDomainAdmin, signInAdmin, signOutAdmin } from '../lib/firebase';
-import { coverage, eventsOf, gymsFor, pagesOf, sessionNames, squadsOf } from '../lib/pick';
-import { eventName, sheetKeyOf, sheetLabel, squadLabel, type SheetEntry, type SheetList } from '../lib/sheet';
-import { isListedAdmin, loadMeetSettings, loadMeets, loadSheetLists, sheetsWithPhotos, type MeetRow } from '../lib/store';
+import { coverage, eventsOf, gymsFor, pagesOf, sessionNames, sessionsWithPhotos, squadsOf } from '../lib/pick';
+import { eventName, sessionTitle, sheetKeyOf, sheetLabel, squadLabel, type SheetEntry, type SheetList } from '../lib/sheet';
+import { isListedAdmin, loadMeetSettings, loadMeets, loadSheetLists, sessionsHoldingPhotos, sheetsWithPhotos, type MeetRow } from '../lib/store';
 import DownloadAll from './DownloadAll';
 import PhotoViewer from './PhotoViewer';
 import { useUser } from './use-auth';
@@ -126,6 +126,21 @@ function Admin({ email }: { email: string }) {
     return () => { live = false; };
   }, [meetId, list, photosFor]);
 
+  // Which sessions of the meet hold any photo: one Storage listing, so the admin can go straight to them.
+  const [meetPhotos, setMeetPhotos] = useState<Result<Set<string>> | null>(null);
+  const meetPhotosFor = meetId ? `${meetId}#${reload}` : '';
+  useEffect(() => {
+    if (!meetId) return;
+    let live = true;
+    sessionsHoldingPhotos(meetId)
+      .then((s) => live && setMeetPhotos({ for: meetPhotosFor, ok: true, value: s }))
+      .catch(() => live && setMeetPhotos({ for: meetPhotosFor, ok: false }));
+    return () => { live = false; };
+  }, [meetId, meetPhotosFor]);
+  const meetPhotoSet = meetPhotos?.for === meetPhotosFor ? meetPhotos : null;
+  const photoSessions = ready && meetPhotoSet?.ok ? sessionsWithPhotos(lists, meetPhotoSet.value, ready.gymOrder) : null;
+  const goTo = (l: SheetList) => { setName(l.name); setSessionId(l.sessionId); };
+
   const photoSet = photos?.for === photosFor ? photos : null;
   const cover = list && photoSet?.ok ? coverage(list, photoSet.value) : null;
   const choose = (e: SheetEntry) => { setEvent(e.event); setSquad(e.squad); setPage(e.page); };
@@ -172,6 +187,23 @@ function Admin({ email }: { email: string }) {
         {data?.for === meetId && !data.ok && <p className="adm-banner err" role="alert">Could not load this meet’s sessions. Reload the page to try again.</p>}
         {meetId && data?.for !== meetId && <p role="status">Loading sessions…</p>}
         {ready && lists.length > 0 && (
+          <div className="adm-meet-photos">
+            <h2 className="adm-sub">Photos in this meet</h2>
+            {!meetPhotoSet && <p role="status">Checking which sessions have photos…</p>}
+            {meetPhotoSet && !meetPhotoSet.ok && <p className="adm-banner err" role="alert">Could not check which sessions have photos.</p>}
+            {photoSessions && photoSessions.length === 0 && <p>No photos yet in this meet.</p>}
+            {photoSessions && photoSessions.length > 0 && (
+              <ul className="adm-missing" aria-label="Sessions with photos">
+                {photoSessions.map((l) => (
+                  <li key={l.sessionId}>
+                    <button type="button" className="adm-chip" aria-current={l.sessionId === list?.sessionId} onClick={() => goTo(l)}>{sessionTitle(l)}</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+        {ready && lists.length > 0 && (
           <DownloadAll key={meetId} meetId={meetId} meetName={meetRows.find((m) => m.id === meetId)?.name ?? ''} lists={lists} gymOrder={ready.gymOrder} />
         )}
         {ready && lists.length === 0 && (
@@ -197,10 +229,22 @@ function Admin({ email }: { email: string }) {
           {cover && (
             <>
               <p><b>{cover.done} of {cover.total}</b> sheets have a photo.{cover.missing.length === 0 && cover.total > 0 && ' Every sheet is in.'}</p>
+              {cover.have.length > 0 && (
+                <>
+                  <h3>Has a photo</h3>
+                  <ul className="adm-missing" aria-label="Sheets with a photo">
+                    {cover.have.map((e) => (
+                      <li key={sheetKeyOf(e)}>
+                        <button type="button" className="adm-chip" aria-current={!!entry && sheetKeyOf(e) === sheetKeyOf(entry)} onClick={() => choose(e)}>{sheetLabel(list.discipline, e)}</button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
               {cover.missing.length > 0 && (
                 <>
                   <h3>No photo yet</h3>
-                  <ul className="adm-missing">
+                  <ul className="adm-missing" aria-label="Sheets with no photo yet">
                     {cover.missing.map((e) => (
                       <li key={sheetKeyOf(e)}>
                         <button type="button" className="adm-chip" onClick={() => choose(e)}>{sheetLabel(list.discipline, e)}</button>
