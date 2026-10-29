@@ -1,9 +1,9 @@
-// The live camera, full screen, held sideways: the camera's whole picture (nothing cut off), with a card-shaped frame nearly
-// filling it that the scorecard must fill. Upright is refused with a
-// "turn your phone" prompt (phones cannot be locked to landscape from a web page). When the camera cannot be opened (no
-// permission, an old browser) the phone's own camera app is offered instead.
+// The live camera, full screen: the camera's whole picture (nothing cut off), with a card-shaped frame nearly filling it that
+// the scorecard must fill. A landscape card needs the phone sideways: upright is refused with a "turn your phone" prompt (phones
+// cannot be locked to landscape from a web page). The portrait synchro sheet may be shot either way. When the camera cannot be
+// opened (no permission, an old browser) the phone's own camera app is offered instead.
 import { useEffect, useRef, useState } from 'react';
-import { frameRect } from '../lib/photo';
+import { frameRect, needsSideways } from '../lib/photo';
 import { useLandscape } from './use-landscape';
 
 interface Props {
@@ -33,7 +33,8 @@ export default function CameraView({ aspect, label, busy, onShoot, onCancel, onU
   const [cam, setCam] = useState<CamState>(() => (canOpen ? { k: 'starting' } : { k: 'error', message: 'This browser cannot open the camera here.' }));
   const [view, setView] = useState({ w: 0, h: 0 });
   const [camSize, setCamSize] = useState({ w: 0, h: 0 });
-  const landscape = useLandscape();
+  // Held the right way: sideways for a landscape card; either way for the portrait synchro sheet.
+  const heldRight = useLandscape() || !needsSideways(aspect);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -74,21 +75,21 @@ export default function CameraView({ aspect, label, busy, onShoot, onCancel, onU
   }, []);
 
   const f = frameRect(view, camSize.w > 0 ? camSize : view, aspect);
-  const ready = cam.k === 'live' && landscape && !busy;
+  const ready = cam.k === 'live' && heldRight && !busy;
 
   return (
     <div className="cam" role="dialog" aria-modal="true" aria-label="Camera">
       <div className="cam-view" ref={boxRef}>
         <video ref={videoRef} className="cam-video" playsInline muted autoPlay aria-hidden="true" />
-        {cam.k === 'live' && landscape && view.w > 0 && camSize.w > 0 && (
+        {cam.k === 'live' && heldRight && view.w > 0 && camSize.w > 0 && (
           <div className="cam-frame" style={{ left: f.x, top: f.y, width: f.w, height: f.h }} aria-hidden="true">
             <span className="cam-corner tl" /><span className="cam-corner tr" /><span className="cam-corner bl" /><span className="cam-corner br" />
           </div>
         )}
-        {landscape && cam.k === 'live' && <p className="cam-hint">{label} · fill the frame with the whole card</p>}
+        {heldRight && cam.k === 'live' && <p className="cam-hint">{label} · fill the frame with the whole {needsSideways(aspect) ? 'card' : 'sheet'}</p>}
       </div>
 
-      {!landscape && cam.k !== 'error' && (
+      {!heldRight && cam.k !== 'error' && (
         <div className="cam-turn" role="alert">
           <svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true">
             <rect x="20" y="8" width="24" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="3" />
@@ -101,7 +102,7 @@ export default function CameraView({ aspect, label, busy, onShoot, onCancel, onU
         </div>
       )}
 
-      {cam.k === 'starting' && landscape && <p className="cam-status" role="status">Opening the camera…</p>}
+      {cam.k === 'starting' && heldRight && <p className="cam-status" role="status">Opening the camera…</p>}
       {cam.k === 'error' && (
         <div className="cam-turn" role="alert">
           <p className="cam-turn-title">Camera not available</p>
@@ -113,7 +114,7 @@ export default function CameraView({ aspect, label, busy, onShoot, onCancel, onU
         </div>
       )}
 
-      {landscape && cam.k !== 'error' && (
+      {heldRight && cam.k !== 'error' && (
         <div className="cam-bar">
           <button type="button" className="btn ghost cam-light" onClick={onCancel}>Cancel</button>
           <button type="button" className="cam-shutter" disabled={!ready} onClick={() => videoRef.current && onShoot(videoRef.current)} aria-label="Take photo">

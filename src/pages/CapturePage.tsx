@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { PortraitPhotoError, shotFromFile, shotFromVideo, type Shot } from '../lib/capture';
 import { ensureUploader } from '../lib/firebase';
-import { aspectFor } from '../lib/photo';
+import { aspectFor, needsSideways } from '../lib/photo';
 import { checkQr, type QrCheck } from '../lib/qr-check';
 import { isRetryable, retryDelay } from '../lib/retry';
 import { findSheet, parseSheetUrl, photoFileId, photoFileName, sessionTitle, sheetFolder, sheetLabel, type SheetEntry, type SheetKey, type SheetList } from '../lib/sheet';
@@ -95,7 +95,7 @@ function Capture({ sheet }: { sheet: Sheet }) {
     if (!file) return;
     setShotError('');
     setBusy(true);
-    try { review(await shotFromFile(file)); } catch (e) { failShot(e); setStep({ k: 'start' }); } finally { setBusy(false); }
+    try { review(await shotFromFile(file, aspectFor(key.event))); } catch (e) { failShot(e); setStep({ k: 'start' }); } finally { setBusy(false); }
   }
 
   function retake(shot?: Shot) {
@@ -158,7 +158,9 @@ function Capture({ sheet }: { sheet: Sheet }) {
 
       {step.k === 'start' && (
         <section className="cap-card">
-          <p>Take a photo of this finished scorecard. Hold your phone <b>sideways</b> and fit the whole card inside the frame.</p>
+          {needsSideways(aspectFor(key.event))
+            ? <p>Take a photo of this finished scorecard. Hold your phone <b>sideways</b> and fit the whole card inside the frame.</p>
+            : <p>Take a photo of this finished score sheet. Hold your phone <b>upright</b> and fit the whole sheet inside the frame.</p>}
           <button type="button" className="btn primary cap-big" onClick={() => setStep({ k: 'camera' })} disabled={busy}>Take photo</button>
         </section>
       )}

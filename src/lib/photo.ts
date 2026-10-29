@@ -8,7 +8,7 @@ export interface Rect { x: number; y: number; w: number; h: number }
 
 /** A landscape US Letter sheet (11 × 8.5 in): every scorecard. */
 export const CARD_ASPECT = 11 / 8.5;
-/** A portrait one: the synchro sheet. The phone is still held sideways; the frame is just upright. */
+/** A portrait one: the synchro sheet. The phone may be held either way for it (upright suits it best). */
 export const PORTRAIT_ASPECT = 8.5 / 11;
 export const aspectFor = (event: string): number => (event === 'SY' ? PORTRAIT_ASPECT : CARD_ASPECT);
 /** The kept photo's long side (px): small enough to upload on a poor signal, sharp enough to read handwriting. */
@@ -20,6 +20,9 @@ const FRAME_H = 0.85; // leaves room below the frame for the one-line hint
 const CROP_MARGIN = 0.04;
 
 export const isLandscape = (w: number, h: number): boolean => w > h;
+
+/** Whether the phone must be held sideways for this sheet: only for a landscape card; a portrait sheet may be shot either way. */
+export const needsSideways = (aspect: number): boolean => aspect > 1;
 
 interface Size { w: number; h: number }
 

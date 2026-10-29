@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CARD_ASPECT, PORTRAIT_ASPECT, aspectFor, cropForFrame, fitLong, frameRect, isLandscape, qrAttempts, videoInView, viewRectToVideo } from '../../src/lib/photo';
+import { CARD_ASPECT, PORTRAIT_ASPECT, aspectFor, cropForFrame, fitLong, frameRect, isLandscape, needsSideways, qrAttempts, videoInView, viewRectToVideo } from '../../src/lib/photo';
 
 describe('photo geometry', () => {
   it('only a wider-than-tall picture is landscape', () => {
@@ -26,6 +26,22 @@ describe('photo geometry', () => {
     expect(p.h / 390).toBeCloseTo(0.85);
     expect(aspectFor('SY')).toBe(PORTRAIT_ASPECT);
     expect(aspectFor('FX')).toBe(CARD_ASPECT);
+  });
+
+  it('only a landscape card needs the phone sideways; the synchro sheet may be shot upright', () => {
+    expect(needsSideways(CARD_ASPECT)).toBe(true);
+    expect(needsSideways(aspectFor('SY'))).toBe(false);
+  });
+
+  it('frames the synchro sheet when the phone is held upright (a 3:4 camera picture)', () => {
+    const view = { w: 390, h: 740 };
+    const cam = { w: 3024, h: 4032 };
+    const f = frameRect(view, cam, PORTRAIT_ASPECT);
+    expect(f.w / f.h).toBeCloseTo(PORTRAIT_ASPECT);
+    const c = cropForFrame(view, cam, PORTRAIT_ASPECT);
+    // Upright, the sheet gets most of the picture: far more than inside a sideways view.
+    expect(c.h).toBeGreaterThan(3400);
+    expect(cropForFrame({ w: 844, h: 390 }, { w: 4032, h: 3024 }, PORTRAIT_ASPECT).h).toBeLessThan(c.h);
   });
 
   it('maps the screen to camera pixels', () => {

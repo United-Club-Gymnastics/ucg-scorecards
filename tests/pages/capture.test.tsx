@@ -124,6 +124,20 @@ describe('capture page', () => {
     expect(screen.getByText('Opening the camera…')).toBeInTheDocument();
   });
 
+  it('a synchro sheet may be shot with the phone upright', async () => {
+    landscape = false;
+    store.loadSheetList.mockResolvedValue({ ...LIST, discipline: 'TNT', sheets: [{ event: 'SY', squad: 'A', page: 1, pages: 2 }] });
+    const user = userEvent.setup();
+    open('/s/testmeet-ab12/s1-green/SY/A/1');
+    expect(await screen.findByText(/Hold your phone/)).toHaveTextContent('Hold your phone upright and fit the whole sheet inside the frame.');
+    await user.click(screen.getByRole('button', { name: 'Take photo' }));
+    const cam = screen.getByRole('dialog', { name: 'Camera' });
+    expect(within(cam).queryByText('Turn your phone sideways')).toBeNull();
+    expect(within(cam).getByRole('button', { name: 'Take photo' })).toBeInTheDocument();
+    await takeFromFile();
+    expect(capture.shotFromFile).toHaveBeenCalledWith(expect.any(File), 8.5 / 11);
+  });
+
   it('refuses an upright photo with a clear message', async () => {
     capture.shotFromFile.mockRejectedValue(new capture.PortraitPhotoError());
     open();
