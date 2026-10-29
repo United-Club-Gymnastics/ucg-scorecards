@@ -1,7 +1,7 @@
 // Browser side of taking the photo: cut the frame out of the live camera picture (or take a photo the phone's own camera app
 // made), scale it, read the QR code in it, and make the JPEG. The maths is in photo.ts.
 import jsQR from 'jsqr';
-import { JPEG_QUALITY, cropForFrame, fitLong, isLandscape, qrRegions, type Rect } from './photo';
+import { JPEG_QUALITY, cropForFrame, fitLong, isLandscape, qrAttempts, type Rect } from './photo';
 
 export interface Shot {
   blob: Blob;
@@ -25,15 +25,15 @@ function canvas(w: number, h: number): HTMLCanvasElement {
   return c;
 }
 
-/** Reads the QR code from the full-resolution source, corner first; at most ~1600 px a side per attempt keeps it quick. */
+/** Reads the QR code from the full-resolution source: the corner first (as captured, then enlarged), then the whole photo. */
 function readQr(src: CanvasImageSource, w: number, h: number): string | null {
-  for (const r of qrRegions(w, h)) {
-    const size = fitLong(r.w, r.h, 1600);
-    const c = canvas(size.w, size.h);
+  for (const { region: r, w: tw, h: th } of qrAttempts(w, h)) {
+    const c = canvas(tw, th);
     const ctx = c.getContext('2d', { willReadFrequently: true });
     if (!ctx) return null;
-    ctx.drawImage(src, r.x, r.y, r.w, r.h, 0, 0, size.w, size.h);
-    const found = jsQR(ctx.getImageData(0, 0, size.w, size.h).data, size.w, size.h, { inversionAttempts: 'dontInvert' });
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, r.x, r.y, r.w, r.h, 0, 0, tw, th);
+    const found = jsQR(ctx.getImageData(0, 0, tw, th).data, tw, th, { inversionAttempts: 'dontInvert' });
     if (found?.data) return found.data;
   }
   return null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CARD_ASPECT, PORTRAIT_ASPECT, aspectFor, cropForFrame, fitLong, frameRect, isLandscape, qrRegions, viewRectToVideo } from '../../src/lib/photo';
+import { CARD_ASPECT, PORTRAIT_ASPECT, aspectFor, cropForFrame, fitLong, frameRect, isLandscape, qrAttempts, viewRectToVideo } from '../../src/lib/photo';
 
 describe('photo geometry', () => {
   it('only a wider-than-tall picture is landscape', () => {
@@ -50,7 +50,18 @@ describe('photo geometry', () => {
     expect(fitLong(3000, 4000, 1600)).toEqual({ w: 1200, h: 1600 });
   });
 
-  it('looks for the QR in the top-left corner first, then everywhere', () => {
-    expect(qrRegions(2000, 1500)).toEqual([{ x: 0, y: 0, w: 700, h: 600 }, { x: 0, y: 0, w: 2000, h: 1500 }]);
+  it('looks for the QR in the top-left corner, then the corner enlarged 2×, then everywhere', () => {
+    const corner = { x: 0, y: 0, w: 532, h: 474 };
+    expect(qrAttempts(1520, 1185)).toEqual([
+      { region: corner, w: 532, h: 474 },
+      { region: corner, w: 1064, h: 948 },
+      { region: { x: 0, y: 0, w: 1520, h: 1185 }, w: 1520, h: 1185 },
+    ]);
+  });
+
+  it('caps each try at the reader size limit, and skips the 2× try when it would not be bigger', () => {
+    const big = qrAttempts(4000, 3000);
+    expect(big.map((t) => [t.w, t.h])).toEqual([[1400, 1200], [2000, 1714], [2000, 1500]]);
+    expect(qrAttempts(12000, 9000).map((t) => [t.w, t.h])).toEqual([[2000, 1714], [2000, 1500]]);
   });
 });
