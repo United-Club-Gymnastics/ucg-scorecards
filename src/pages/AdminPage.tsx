@@ -7,6 +7,7 @@ import { isDomainAdmin, signInAdmin, signOutAdmin } from '../lib/firebase';
 import { coverage, eventsOf, gymsFor, pagesOf, sessionNames, squadsOf } from '../lib/pick';
 import { eventName, sheetKeyOf, sheetLabel, squadLabel, type SheetEntry, type SheetList } from '../lib/sheet';
 import { isListedAdmin, loadMeetSettings, loadMeets, loadSheetLists, sheetsWithPhotos, type MeetRow } from '../lib/store';
+import DownloadAll from './DownloadAll';
 import PhotoViewer from './PhotoViewer';
 import { useUser } from './use-auth';
 import './admin.css';
@@ -170,6 +171,9 @@ function Admin({ email }: { email: string }) {
         </div>
         {data?.for === meetId && !data.ok && <p className="adm-banner err" role="alert">Could not load this meet’s sessions. Reload the page to try again.</p>}
         {meetId && data?.for !== meetId && <p role="status">Loading sessions…</p>}
+        {ready && lists.length > 0 && (
+          <DownloadAll key={meetId} meetId={meetId} meetName={meetRows.find((m) => m.id === meetId)?.name ?? ''} lists={lists} gymOrder={ready.gymOrder} />
+        )}
         {ready && lists.length === 0 && (
           <p className="adm-banner warn" role="status">This meet has no sheet lists yet. Open Exports in UCG Lineups once: it saves the list of scorecards each session prints.</p>
         )}

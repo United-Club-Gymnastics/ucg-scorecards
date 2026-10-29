@@ -50,3 +50,10 @@ Sign in with Google. Meet (newest first, remembered per browser) → Session (na
 Apparatus (print order) → Squad / Flight → Page (only when more than one). Shows the newest photo: Fit / 1.5× / 2× / 3× zoom
 (click toggles), Download, Delete…, and every version. Below: "N of M sheets have a photo" and a **No photo yet** list that
 opens a sheet when chosen.
+
+**Download all photos for this meet (.zip)** (under the pickers), for keeping a record before the 18-month auto-delete: built in
+the browser (`src/lib/export.ts`, names in `src/lib/archive.ts`). One folder per session (`Session 1 - Green`), in picker
+order; the newest photo of a sheet is `Floor - Squad A.jpg`, earlier versions `Floor - Squad A (earlier, 2026-10-24 15.20.00
+UTC).jpg`. `index.csv` lists every printed sheet: session, gym, apparatus, squad, page, photo count, newest time, file, and a
+note (`No photo`, or how many photos could not be downloaded). A failed photo does not stop the rest. Shows progress and can be
+cancelled. Holds the whole zip in memory, so use a laptop for a big meet.

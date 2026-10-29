@@ -1,6 +1,7 @@
 /* Admin view. Text pairs (WCAG AA, computed): navy-800 on white 14.0:1, on ice-200 11.8:1, on gold-100 12.1:1, on
    coral-100 11.9:1; white on navy-800 (pressed zoom, current version) 14.0:1; coral-text (danger) on white 5.2:1; chip border
-   navy-600 on white 7.7:1 (UI ≥ 3:1). */
+   navy-600 on white 7.7:1 (UI ≥ 3:1); download-all done banner navy-800 on ice-200 11.8:1, progress bar coral-500 on ice-300
+   (UI, decorative: the text beside it carries the count). */
 .adm { max-width: 1100px; margin: 0 auto; padding: 16px; }
 .adm-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .adm-title { font-size: 34px; }
@@ -14,11 +15,16 @@
 .adm-gate .adm-title { margin-bottom: 10px; }
 .adm-banner { border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px; margin: 8px 0; color: var(--ink); }
 .adm-banner.warn { background: var(--gold-100); border: 1px solid var(--gold); }
+.adm-banner.ok { background: var(--ice-200); border: 1px solid var(--ice-300); }
 .adm-banner.err { background: var(--coral-100); border: 1px solid var(--coral-500); }
 .adm-picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
 .adm-meet { grid-column: 1 / -1; max-width: 420px; }
 .adm-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .adm-field > span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.adm-export { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.adm-export-run { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.adm-export-run p { margin: 0; font-size: 14px; flex: 1 1 220px; }
+.adm-export-run progress { flex: 1 1 160px; height: 10px; accent-color: var(--coral-500); }
 .adm-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .adm-tools > span { flex: 1 1 160px; font-size: 14px; }
 .adm-zoom { display: flex; gap: 4px; }

@@ -1,7 +1,7 @@
 // Firestore and Storage access. Reads: a session's sheet list (public get), the meet's public settings, and for admins the
 // meets and every session's sheet list. Writes: one photo per upload (create only), and admins delete a photo.
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore/lite';
-import { deleteObject, getDownloadURL, list, ref, uploadBytesResumable, type UploadTask } from 'firebase/storage';
+import { deleteObject, getBlob, getDownloadURL, list, ref, uploadBytesResumable, type UploadTask } from 'firebase/storage';
 import { db, storage } from './firebase';
 import { parseSheetList, photoTime, sheetFolder, type SheetKey, type SheetList } from './sheet';
 
@@ -80,4 +80,6 @@ export async function sheetsWithPhotos(meetId: string, sessionId: string, keys: 
 }
 
 export const photoUrl = (path: string): Promise<string> => getDownloadURL(ref(storage, path));
+/** Admins: one photo's bytes (for the download-all zip). */
+export const getPhoto = (path: string): Promise<Blob> => getBlob(ref(storage, path));
 export const deletePhoto = (path: string): Promise<void> => deleteObject(ref(storage, path));

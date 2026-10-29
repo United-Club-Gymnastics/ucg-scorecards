@@ -15,7 +15,7 @@ const auth = vi.hoisted(() => ({ user: null as null | { email: string; emailVeri
 vi.mock('../../src/pages/use-auth', () => ({ useUser: () => auth.user }));
 const store = vi.hoisted(() => ({
   isListedAdmin: vi.fn(), loadMeetSettings: vi.fn(), loadMeets: vi.fn(), loadSheetLists: vi.fn(), sheetsWithPhotos: vi.fn(),
-  listPhotos: vi.fn(), photoUrl: vi.fn(), deletePhoto: vi.fn(),
+  listPhotos: vi.fn(), photoUrl: vi.fn(), deletePhoto: vi.fn(), getPhoto: vi.fn(),
 }));
 vi.mock('../../src/lib/store', () => store);
 
@@ -44,6 +44,7 @@ beforeEach(() => {
   store.listPhotos.mockResolvedValue([v('20261024T153000Z-bbbbbb.jpg'), v('20261024T152000Z-aaaaaa.jpg')]);
   store.photoUrl.mockImplementation(async (p: string) => `https://storage.example/${p}`);
   store.deletePhoto.mockResolvedValue(undefined);
+  store.getPhoto.mockImplementation(async (p: string) => new Blob([p]));
 });
 
 describe('admin view', () => {
@@ -123,5 +124,21 @@ describe('admin view', () => {
     store.loadSheetLists.mockResolvedValue([]);
     open();
     expect(await screen.findByText(/no sheet lists yet/)).toBeInTheDocument();
+  });
+
+  it('downloads every photo of the meet as one zip', async () => {
+    const user = userEvent.setup();
+    const made: Blob[] = [];
+    URL.createObjectURL = vi.fn((b: Blob) => { made.push(b); return 'blob:zip'; }) as typeof URL.createObjectURL;
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    open();
+    await user.click(await screen.findByRole('button', { name: 'Download all photos for this meet (.zip)' }));
+    // 7 sheets in the meet, every one listed with the same 2 versions.
+    expect(await screen.findByText(/Saved 14 photos: 7 of 7 sheets have a photo\./)).toBeInTheDocument();
+    expect(store.getPhoto).toHaveBeenCalledTimes(14);
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(made.at(-1)?.type).toBe('application/zip');
+    click.mockRestore();
   });
 });
