@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// UCG scorecard photos (bucket ucg-lineups.firebasestorage.app). Deploy by hand, only with Julia's go-ahead (see CLAUDE.md).
+// Admin check mirrors ucg-lineups firestore.rules: a verified @unitedclubgymnastics.org email, or an admins/{lowercased email}
+// document in Firestore. Everything not listed below is denied.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && (request.auth.token.email.lower().matches('.*@unitedclubgymnastics[.]org')
+            || firestore.exists(/databases/(default)/documents/admins/$(request.auth.token.email.lower())));
+    }
+
+    // The session's sheet list (written by Lineups' Exports screen): keys are `<event>/<squad>/<page>`, each part encoded
+    // exactly as in this path and in the printed QR link.
+    function listedSheet(meetId, sessionId, event, squad, page) {
+      return (event + '/' + squad + '/' + page)
+        in firestore.get(/databases/(default)/documents/meets/$(meetId)/sheetLists/$(sessionId)).data.keys;
+    }
+
+    // scorecards/<meetId>/<sessionId>/<event>/<squad>/<page>/<yyyymmddThhmmssZ>-<6 chars>.jpg
+    // Anyone signed in (the volunteer's phone signs in anonymously) may ADD a photo of a listed sheet: a JPEG under 8 MB with a
+    // time-stamped name. Never overwrite (a re-shoot is a new file), never read, list or delete.
+    match /scorecards/{meetId}/{sessionId}/{event}/{squad}/{page}/{file} {
+      // `resource == null`: nothing there yet. Not left to create-vs-update alone (the emulator lets an overwrite through as a create).
+      allow create: if request.auth != null
+        && resource == null
+        && file.matches('[0-9]{8}T[0-9]{6}Z-[a-z0-9]{6}[.]jpg')
+        && request.resource.size > 0
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType == 'image/jpeg'
+        && (request.resource.metadata == null || request.resource.metadata.keys().hasOnly(['qr']))
+        && listedSheet(meetId, sessionId, event, squad, page);
+    }
+
+    // Admins view, list (to see which sheets have photos) and delete. Admins never overwrite either.
+    match /scorecards/{allPaths=**} {
+      allow read, delete: if isAdmin();
+    }
+  }
+}

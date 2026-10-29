@@ -1,0 +1,119 @@
+// The live camera, full screen, held sideways, with a card-shaped frame the scorecard must fill. Upright is refused with a
+// "turn your phone" prompt (phones cannot be locked to landscape from a web page). When the camera cannot be opened (no
+// permission, an old browser) the phone's own camera app is offered instead.
+import { useEffect, useRef, useState } from 'react';
+import { frameRect } from '../lib/photo';
+import { useLandscape } from './use-landscape';
+
+interface Props {
+  aspect: number;
+  /** The sheet, shown along the top so the person knows what to shoot. */
+  label: string;
+  busy: boolean;
+  onShoot: (video: HTMLVideoElement) => void;
+  onCancel: () => void;
+  onUseCameraApp: () => void;
+}
+
+type CamState = { k: 'starting' } | { k: 'live' } | { k: 'error'; message: string };
+
+function cameraError(e: unknown): string {
+  const name = e instanceof DOMException ? e.name : '';
+  if (name === 'NotAllowedError' || name === 'SecurityError') return 'The camera is blocked for this page. Allow camera access in your browser settings, or use your camera app instead.';
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'No camera was found on this device.';
+  return 'The camera could not be opened.';
+}
+
+export default function CameraView({ aspect, label, busy, onShoot, onCancel, onUseCameraApp }: Props) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  // Not on plain http, and not in some in-app browsers.
+  const canOpen = typeof navigator.mediaDevices?.getUserMedia === 'function';
+  const [cam, setCam] = useState<CamState>(() => (canOpen ? { k: 'starting' } : { k: 'error', message: 'This browser cannot open the camera here.' }));
+  const [view, setView] = useState({ w: 0, h: 0 });
+  const landscape = useLandscape();
+
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let stopped = false;
+    if (!canOpen) return;
+    navigator.mediaDevices
+      .getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } } })
+      .then(async (s) => {
+        if (stopped) { s.getTracks().forEach((t) => t.stop()); return; }
+        stream = s;
+        const v = videoRef.current;
+        if (!v) return;
+        v.srcObject = s;
+        await v.play().catch(() => undefined);
+        setCam({ k: 'live' });
+      })
+      .catch((e) => setCam({ k: 'error', message: cameraError(e) }));
+    return () => {
+      stopped = true;
+      stream?.getTracks().forEach((t) => t.stop());
+    };
+  }, [canOpen]);
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const measure = () => setView({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const f = frameRect(view.w, view.h, aspect);
+  const ready = cam.k === 'live' && landscape && !busy;
+
+  return (
+    <div className="cam" role="dialog" aria-modal="true" aria-label="Camera">
+      <div className="cam-view" ref={boxRef}>
+        <video ref={videoRef} className="cam-video" playsInline muted autoPlay aria-hidden="true" />
+        {cam.k === 'live' && landscape && view.w > 0 && (
+          <div className="cam-frame" style={{ left: f.x, top: f.y, width: f.w, height: f.h }} aria-hidden="true">
+            <span className="cam-corner tl" /><span className="cam-corner tr" /><span className="cam-corner bl" /><span className="cam-corner br" />
+          </div>
+        )}
+        {landscape && cam.k === 'live' && <p className="cam-hint">{label} · fill the frame with the whole card</p>}
+      </div>
+
+      {!landscape && cam.k !== 'error' && (
+        <div className="cam-turn" role="alert">
+          <svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true">
+            <rect x="20" y="8" width="24" height="40" rx="4" fill="none" stroke="currentColor" strokeWidth="3" />
+            <path d="M12 44 a22 22 0 0 0 22 14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            <path d="M28 54 l6 4 -4 6" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <p className="cam-turn-title">Turn your phone sideways</p>
+          <p>Scorecard photos are taken in landscape.</p>
+          <button type="button" className="btn ghost cam-light" onClick={onCancel}>Cancel</button>
+        </div>
+      )}
+
+      {cam.k === 'starting' && landscape && <p className="cam-status" role="status">Opening the camera…</p>}
+      {cam.k === 'error' && (
+        <div className="cam-turn" role="alert">
+          <p className="cam-turn-title">Camera not available</p>
+          <p>{cam.message}</p>
+          <div className="cam-actions-row">
+            <button type="button" className="btn primary" onClick={onUseCameraApp}>Use the camera app</button>
+            <button type="button" className="btn ghost cam-light" onClick={onCancel}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {landscape && cam.k !== 'error' && (
+        <div className="cam-bar">
+          <button type="button" className="btn ghost cam-light" onClick={onCancel}>Cancel</button>
+          <button type="button" className="cam-shutter" disabled={!ready} onClick={() => videoRef.current && onShoot(videoRef.current)} aria-label="Take photo">
+            <span aria-hidden="true" />
+          </button>
+          <button type="button" className="cam-link" onClick={onUseCameraApp}>Camera app</button>
+        </div>
+      )}
+    </div>
+  );
+}
