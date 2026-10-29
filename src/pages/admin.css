@@ -21,8 +21,6 @@
 .adm-meet { grid-column: 1 / -1; max-width: 420px; }
 .adm-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .adm-field > span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-.adm-meet-photos { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
-.adm-card .adm-sub { font-size: 15px; margin: 0 0 8px; font-family: inherit; }
 .adm-export { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .adm-export-run { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .adm-export-run p { margin: 0; font-size: 14px; flex: 1 1 220px; }

@@ -23,11 +23,6 @@ export const squadsOf = (list: SheetList, event: string): string[] => [...new Se
 
 export const pagesOf = (list: SheetList, event: string, squad: string): SheetEntry[] => list.sheets.filter((e) => e.event === event && e.squad === squad);
 
-/** The meet's sessions that hold any photo (`withPhotos`: session ids), in the order the pickers show them. */
-export function sessionsWithPhotos(lists: SheetList[], withPhotos: Set<string>, gymOrder: string[] = []): SheetList[] {
-  return sessionNames(lists).flatMap((name) => gymsFor(lists, name, gymOrder)).filter((l) => withPhotos.has(l.sessionId));
-}
-
 export interface Coverage {
   total: number;
   done: number;

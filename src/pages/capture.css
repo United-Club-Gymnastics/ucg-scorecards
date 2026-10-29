@@ -43,14 +43,14 @@
 /* Camera: full screen, black, the controls in a column on the right (the phone is held sideways). */
 .cam { position: fixed; inset: 0; z-index: 100; background: #000; color: #fff; display: flex; }
 .cam-view { position: relative; flex: 1; overflow: hidden; }
-.cam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .cam-frame { position: absolute; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .45); border: 1px solid rgba(255, 255, 255, .7); }
 .cam-corner { position: absolute; width: 28px; height: 28px; border: 0 solid var(--coral-500); filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000); }
 .cam-corner.tl { top: -3px; left: -3px; border-top-width: 5px; border-left-width: 5px; }
 .cam-corner.tr { top: -3px; right: -3px; border-top-width: 5px; border-right-width: 5px; }
 .cam-corner.bl { bottom: -3px; left: -3px; border-bottom-width: 5px; border-left-width: 5px; }
 .cam-corner.br { bottom: -3px; right: -3px; border-bottom-width: 5px; border-right-width: 5px; }
-.cam-hint { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 24px); margin: 0; padding: 2px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 999px; background: rgba(0, 0, 0, .7); color: #fff; font-size: 13px; text-align: center; }
+.cam-hint { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 24px); margin: 0; padding: 2px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 999px; background: rgba(0, 0, 0, .7); color: #fff; font-size: 13px; text-align: center; }
 .cam-status { position: absolute; top: 50%; left: 0; right: 96px; text-align: center; margin: 0; }
 .cam-bar { width: 96px; flex: 0 0 96px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 12px 6px; background: #000; }
 .cam-shutter { width: 72px; height: 72px; border-radius: 50%; border: 4px solid #fff; background: transparent; padding: 4px; cursor: pointer; }

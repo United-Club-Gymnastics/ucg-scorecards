@@ -15,7 +15,7 @@ const auth = vi.hoisted(() => ({ user: null as null | { email: string; emailVeri
 vi.mock('../../src/pages/use-auth', () => ({ useUser: () => auth.user }));
 const store = vi.hoisted(() => ({
   isListedAdmin: vi.fn(), loadMeetSettings: vi.fn(), loadMeets: vi.fn(), loadSheetLists: vi.fn(), sheetsWithPhotos: vi.fn(),
-  listPhotos: vi.fn(), photoUrl: vi.fn(), deletePhoto: vi.fn(), getPhoto: vi.fn(), sessionsHoldingPhotos: vi.fn(),
+  listPhotos: vi.fn(), photoUrl: vi.fn(), deletePhoto: vi.fn(), getPhoto: vi.fn(),
 }));
 vi.mock('../../src/lib/store', () => store);
 
@@ -44,7 +44,6 @@ beforeEach(() => {
   store.listPhotos.mockResolvedValue([v('20261024T153000Z-bbbbbb.jpg'), v('20261024T152000Z-aaaaaa.jpg')]);
   store.photoUrl.mockImplementation(async (p: string) => `https://storage.example/${p}`);
   store.deletePhoto.mockResolvedValue(undefined);
-  store.sessionsHoldingPhotos.mockResolvedValue(new Set(['s1-orange', 's2-purple']));
   store.getPhoto.mockImplementation(async (p: string) => new Blob([p]));
 });
 
@@ -111,24 +110,16 @@ describe('admin view', () => {
     expect(await screen.findByRole('heading', { name: 'Session 1 – Orange · Pommel Horse · Squad A' })).toBeInTheDocument();
   });
 
-  it('lists the sessions that have photos and the sheets that do; choosing one opens it', async () => {
+  it('lists the sheets that have a photo; choosing one opens it', async () => {
     const user = userEvent.setup();
     store.sheetsWithPhotos.mockResolvedValue(new Set(['TR/A/2']));
     open();
-    const sessions = await screen.findByRole('list', { name: 'Sessions with photos' });
-    expect(within(sessions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Session 1 – Orange', 'Session 2 – Purple']);
-    await user.click(within(sessions).getByRole('button', { name: 'Session 2 – Purple' }));
+    await choose(user, await screen.findByLabelText('Session'), 'Session 2');
     const have = await screen.findByRole('list', { name: 'Sheets with a photo' });
     expect(within(have).getAllByRole('button').map((b) => b.textContent)).toEqual(['Trampoline · Squad A · page 2 of 2']);
     await user.click(within(have).getByRole('button'));
     expect(await screen.findByRole('heading', { name: 'Session 2 – Purple · Trampoline · Squad A · page 2 of 2' })).toBeInTheDocument();
     expect(within(have).getByRole('button')).toHaveAttribute('aria-current', 'true');
-  });
-
-  it('says when no session of the meet has a photo yet', async () => {
-    store.sessionsHoldingPhotos.mockResolvedValue(new Set());
-    open();
-    expect(await screen.findByText('No photos yet in this meet.')).toBeInTheDocument();
   });
 
   it('deletes a version only after confirming', async () => {

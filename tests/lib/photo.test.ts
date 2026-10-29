@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CARD_ASPECT, PORTRAIT_ASPECT, aspectFor, cropForFrame, fitLong, frameRect, isLandscape, qrAttempts, viewRectToVideo } from '../../src/lib/photo';
+import { CARD_ASPECT, PORTRAIT_ASPECT, aspectFor, cropForFrame, fitLong, frameRect, isLandscape, qrAttempts, videoInView, viewRectToVideo } from '../../src/lib/photo';
 
 describe('photo geometry', () => {
   it('only a wider-than-tall picture is landscape', () => {
@@ -8,33 +8,52 @@ describe('photo geometry', () => {
     expect(isLandscape(1000, 1000)).toBe(false);
   });
 
-  it('the frame is card-shaped, centred and inside the screen', () => {
-    const f = frameRect(844, 390); // a phone held sideways
+  it('shows the whole camera picture and puts a card-shaped frame nearly filling it', () => {
+    // A 4:3 camera (4032×3024) on a phone held sideways (844×390 view): fitted by height, 520 px wide, centred.
+    const view = { w: 844, h: 390 };
+    const cam = { w: 4032, h: 3024 };
+    const v = videoInView(view, cam);
+    for (const [k, n] of Object.entries({ x: 162, y: 0, w: 520, h: 390 })) expect(v[k as keyof typeof v]).toBeCloseTo(n);
+    const f = frameRect(view, cam);
     expect(f.w / f.h).toBeCloseTo(CARD_ASPECT);
-    expect(f.x).toBeGreaterThan(0);
-    expect(f.y).toBeGreaterThan(0);
+    expect(f.x).toBeGreaterThan(162);
+    expect(f.x + f.w).toBeLessThan(162 + 520);
     expect(f.x * 2 + f.w).toBeCloseTo(844);
-    expect(f.y * 2 + f.h).toBeCloseTo(390);
-    const p = frameRect(844, 390, PORTRAIT_ASPECT);
+    // A card is a little narrower than 4:3, so its height is what limits it: 85% of the picture.
+    expect(f.h / 390).toBeCloseTo(0.85);
+    const p = frameRect(view, cam, PORTRAIT_ASPECT);
     expect(p.w / p.h).toBeCloseTo(PORTRAIT_ASPECT);
+    expect(p.h / 390).toBeCloseTo(0.85);
     expect(aspectFor('SY')).toBe(PORTRAIT_ASPECT);
     expect(aspectFor('FX')).toBe(CARD_ASPECT);
   });
 
-  it('maps the screen to camera pixels when the video covers the view', () => {
-    // A 4:3 camera (4000×3000) covering a 16:9-ish screen 800×450: scale 0.2 by width; 600 px tall, 75 px cut top and bottom.
-    const r = viewRectToVideo({ x: 0, y: 0, w: 800, h: 450 }, { w: 800, h: 450 }, { w: 4000, h: 3000 });
+  it('maps the screen to camera pixels', () => {
+    // A 16:9 camera (1920×1080) in an 844×390 view: fitted by height (scale 390/1080), 693 px wide, 75.5 px either side.
+    const view = { w: 844, h: 390 };
+    const cam = { w: 1920, h: 1080 };
+    const v = videoInView(view, cam);
+    const r = viewRectToVideo(v, view, cam);
     expect(r.x).toBeCloseTo(0);
-    expect(r.y).toBeCloseTo(375);
-    expect(r.w).toBeCloseTo(4000);
-    expect(r.h).toBeCloseTo(2250);
+    expect(r.y).toBeCloseTo(0);
+    expect(r.w).toBeCloseTo(1920);
+    expect(r.h).toBeCloseTo(1080);
+  });
+
+  it('the card gets most of the camera picture', () => {
+    const c = cropForFrame({ w: 844, h: 390 }, { w: 4032, h: 3024 });
+    // Frame 85% of the height plus the margin each side: ~3024 × 0.85 × 1.08 tall, ~3600 wide.
+    expect(c.h).toBeGreaterThan(2750);
+    expect(c.w).toBeGreaterThan(3500);
+    const f = cropForFrame({ w: 844, h: 390 }, { w: 1920, h: 1080 });
+    expect(f.h / 1080).toBeGreaterThan(0.9); // 85% plus the margin
   });
 
   it('crops the frame plus a margin, kept inside the camera picture', () => {
     const view = { w: 800, h: 450 };
     const video = { w: 4000, h: 3000 };
     const c = cropForFrame(view, video);
-    const f = viewRectToVideo(frameRect(800, 450), view, video);
+    const f = viewRectToVideo(frameRect(view, video), view, video);
     expect(c.x).toBeLessThan(f.x);
     expect(c.w).toBeGreaterThan(f.w);
     expect(c.x).toBeGreaterThanOrEqual(0);

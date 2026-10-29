@@ -1,4 +1,5 @@
-// The live camera, full screen, held sideways, with a card-shaped frame the scorecard must fill. Upright is refused with a
+// The live camera, full screen, held sideways: the camera's whole picture (nothing cut off), with a card-shaped frame nearly
+// filling it that the scorecard must fill. Upright is refused with a
 // "turn your phone" prompt (phones cannot be locked to landscape from a web page). When the camera cannot be opened (no
 // permission, an old browser) the phone's own camera app is offered instead.
 import { useEffect, useRef, useState } from 'react';
@@ -31,6 +32,7 @@ export default function CameraView({ aspect, label, busy, onShoot, onCancel, onU
   const canOpen = typeof navigator.mediaDevices?.getUserMedia === 'function';
   const [cam, setCam] = useState<CamState>(() => (canOpen ? { k: 'starting' } : { k: 'error', message: 'This browser cannot open the camera here.' }));
   const [view, setView] = useState({ w: 0, h: 0 });
+  const [camSize, setCamSize] = useState({ w: 0, h: 0 });
   const landscape = useLandscape();
 
   useEffect(() => {
@@ -38,14 +40,20 @@ export default function CameraView({ aspect, label, busy, onShoot, onCancel, onU
     let stopped = false;
     if (!canOpen) return;
     navigator.mediaDevices
-      .getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } } })
+      // The sensor's own 4:3 shape at full size: a scorecard is nearly 4:3, so it can use almost every pixel (a 16:9 stream
+      // would waste the sides and is often smaller).
+      .getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 4032 }, height: { ideal: 3024 }, aspectRatio: { ideal: 4 / 3 } } })
       .then(async (s) => {
         if (stopped) { s.getTracks().forEach((t) => t.stop()); return; }
         stream = s;
         const v = videoRef.current;
         if (!v) return;
         v.srcObject = s;
+        const size = () => v.videoWidth > 0 && setCamSize({ w: v.videoWidth, h: v.videoHeight });
+        v.addEventListener('loadedmetadata', size);
+        v.addEventListener('resize', size);
         await v.play().catch(() => undefined);
+        size();
         setCam({ k: 'live' });
       })
       .catch((e) => setCam({ k: 'error', message: cameraError(e) }));
@@ -65,14 +73,14 @@ export default function CameraView({ aspect, label, busy, onShoot, onCancel, onU
     return () => ro.disconnect();
   }, []);
 
-  const f = frameRect(view.w, view.h, aspect);
+  const f = frameRect(view, camSize.w > 0 ? camSize : view, aspect);
   const ready = cam.k === 'live' && landscape && !busy;
 
   return (
     <div className="cam" role="dialog" aria-modal="true" aria-label="Camera">
       <div className="cam-view" ref={boxRef}>
         <video ref={videoRef} className="cam-video" playsInline muted autoPlay aria-hidden="true" />
-        {cam.k === 'live' && landscape && view.w > 0 && (
+        {cam.k === 'live' && landscape && view.w > 0 && camSize.w > 0 && (
           <div className="cam-frame" style={{ left: f.x, top: f.y, width: f.w, height: f.h }} aria-hidden="true">
             <span className="cam-corner tl" /><span className="cam-corner tr" /><span className="cam-corner bl" /><span className="cam-corner br" />
           </div>

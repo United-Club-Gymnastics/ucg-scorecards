@@ -22,11 +22,12 @@ A session's list exists once someone has opened Exports in Lineups after its squ
 - Scanning opens the sheet and names it: meet, `Session 1 – Green`, `Floor · Squad A` (T&T: `· page 2 of 3`). An unknown link
   or a sheet not in the list: "We can't find this scorecard".
 - Take photo → the back camera, full screen. The phone must be held **sideways**: upright shows "Turn your phone sideways"
-  (a web page cannot lock rotation). A frame the shape of the sheet (landscape Letter; the portrait synchro sheet gets an
-  upright frame inside the landscape view) shows where the card goes. The kept photo is that frame plus a 4% margin, from the
+  (a web page cannot lock rotation). The camera is asked for its sensor's own 4:3 picture at full size and the whole picture
+  is shown (nothing cut off). A frame the shape of the sheet (landscape Letter; the portrait synchro sheet gets an upright
+  frame inside the landscape view) fills 85% of its height and shows where the card goes. The kept photo is that frame plus a 4% margin, from the
   camera's full resolution, scaled to at most 2400 px on the long side, JPEG 85%.
 - No camera access (blocked, old browser): "Use the camera app" (the phone's own camera); a photo taller than wide is refused.
-- Review: Retake / Use photo. The QR in the photo is read (jsQR, top-left corner first): ✓ matches, a warning naming the other
+- Review: Retake / Use photo. The QR in the photo is read (jsQR: the top-left corner, then that corner enlarged 2×, then the whole photo): ✓ matches, a warning naming the other
   sheet, or "couldn't read the code" — never a block.
 - Upload: progress; on a weak signal "Weak signal — still trying…", the photo is kept in the page, retries back off
   2 s → 30 s forever while the page is open and go at once when the phone is back online; leaving mid-upload asks first.
@@ -49,7 +50,8 @@ Floor - Squad A.jpg"` so the admin's Download link saves it under that name.
 Sign in with Google. Meet (newest first, remembered per browser) → Session (natural order) → Gym (the meet's gym order) →
 Apparatus (print order) → Squad / Flight → Page (only when more than one). Shows the newest photo: Fit / 1.5× / 2× / 3× zoom
 (click toggles), Download, Delete…, and every version. Below: "N of M sheets have a photo" and a **No photo yet** list that
-opens a sheet when chosen.
+opens a sheet when chosen, with a **Has a photo** list above it. Over the photo the scroll wheel zooms (1×–5×, about the
+pointer) and dragging with the left or middle button pans; a click without a drag toggles Fit / 2×.
 
 **Download all photos for this meet (.zip)** (under the pickers), for keeping a record before the 18-month auto-delete: built in
 the browser (`src/lib/export.ts`, names in `src/lib/archive.ts`). One folder per session (`Session 1 - Green`), in picker
