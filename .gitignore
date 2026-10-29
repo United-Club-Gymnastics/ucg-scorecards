@@ -1,0 +1,14 @@
+node_modules
+dist
+.env*.local
+*.log
+firebase-debug.log*
+firestore-debug.log
+ui-debug.log
+.firebase/
+.DS_Store
+# Never commit photos (real scorecards carry athlete names); test cards are generated into a scratch folder.
+*.jpg
+*.jpeg
+*.heic
+storage-debug.log
